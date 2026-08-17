@@ -5,3 +5,4 @@
 *.log
 serverss_.log
 error
+vendor

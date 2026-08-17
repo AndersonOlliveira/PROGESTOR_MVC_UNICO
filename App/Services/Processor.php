@@ -17,6 +17,8 @@ class Processor
             $qtLimit
         );
 
+        // $listarController->teste();
+
         echo "[" . date('H:i:s') . "] Processamento finalizado.\n";
     }
 }

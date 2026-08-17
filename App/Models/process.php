@@ -52,30 +52,31 @@ class process extends Model
 		WHERE 
 		--revovmento o 3 pois ele já e o resultado final, quando faz a busca dento do mongo ele não acha os dados e gera uma demora para concluir os dados
 			t.status in (12) AND 
-			--p.contrato = 417039 AND
-			 p.finalizado = false AND
-			 p.error = false";
-
-		$params = [];
-		if ($idProcesso !== null) {
-			$sql .= " AND p.processo_id = ?";
-			$params[] = $idProcesso;
-		}
-
-
-		$sql .= " AND p.pause = ?";
-		$params[] = $info ? 1 : 0;;
-
-
-
-		if ($qtLimit !== null) {
-			$qtLimit = (int)$qtLimit; // garante que é inteiro
-			$sql .= " ORDER BY random() LIMIT $qtLimit;";
-		} else {
-			$sql .= " ORDER BY random() LIMIT 10;";
-		}
+			p.finalizado = false AND
+			p.error = false";
 
 		try {
+
+			$params = [];
+			if ($idProcesso !== null) {
+				$sql .= " AND p.processo_id = ?";
+				$params[] = $idProcesso;
+			}
+
+
+			$sql .= " AND p.pause = ?";
+			$params[] = $info ? 1 : 0;;
+
+
+
+			if ($qtLimit !== null) {
+				$qtLimit = (int)$qtLimit; // garante que é inteiro
+				$sql .= " ORDER BY random() LIMIT $qtLimit;";
+			} else {
+				$sql .= " ORDER BY random() LIMIT 10;";
+			}
+
+
 			$results = $this->db->prepare($sql);
 			$results->execute($params);
 
@@ -117,10 +118,10 @@ class process extends Model
 		    progestor.transacao t INNER JOIN 
 			progestor.processo p ON p.processo_id = t.id_processo 
 		WHERE 
-			t.status in (12) AND 
+			t.status in (12,3) AND 
 			p.mensagem_alerta = 'parar_processo'
 			AND 
-			p.contrato = 417039 AND
+			--p.contrato = 417039 AND
 			(p.finalizado = false or p.finalizado = true) AND 
 			p.error = false";
 
@@ -209,12 +210,21 @@ class process extends Model
 			$sql .= " ORDER BY random() LIMIT 10;";
 		}
 
+		try {
+			$results = $this->db->prepare($sql);
+			$results->execute($params);
+			// $result = $this->db->query($sql);
 
-		$results = $this->db->prepare($sql);
-		$results->execute($params);
-		// $result = $this->db->query($sql);
+			return $results->fetchAll(PDO::FETCH_ASSOC);
+		} catch (PDOException  $e) {
 
-		return $results->fetchAll(PDO::FETCH_ASSOC);
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
+		}
 	}
 
 
@@ -255,12 +265,25 @@ class process extends Model
 			$sql .= " ORDER BY random() LIMIT 10;";
 		}
 
+		try {
 
-		$results = $this->db->prepare($sql);
-		$results->execute($params);
-		// $result = $this->db->query($sql);
 
-		return $results->fetchAll(PDO::FETCH_ASSOC);
+
+
+			$results = $this->db->prepare($sql);
+			$results->execute($params);
+			// $result = $this->db->query($sql);
+
+			return $results->fetchAll(PDO::FETCH_ASSOC);
+		} catch (PDOException  $e) {
+
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
+		}
 	}
 
 
@@ -306,12 +329,21 @@ class process extends Model
 			$sql .= " ORDER BY random() LIMIT 10;";
 		}
 
+		try {
+			$results = $this->db->prepare($sql);
+			$results->execute($params);
+			// $result = $this->db->query($sql);
 
-		$results = $this->db->prepare($sql);
-		$results->execute($params);
-		// $result = $this->db->query($sql);
+			return $results->fetchAll(PDO::FETCH_ASSOC);
+		} catch (PDOException  $e) {
 
-		return $results->fetchAll(PDO::FETCH_ASSOC);
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
+		}
 	}
 
 
@@ -338,11 +370,23 @@ class process extends Model
 		$stmt->bindValue(':data_inicio', $dataInicio);
 		$stmt->bindValue(':data_fim', $dataFim);
 
-		$stmt->execute();
+		try {
 
-		$resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-		return $resultado;
+			$stmt->execute();
+
+			$resultado = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+			return $resultado;
+		} catch (PDOException  $e) {
+
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
+		}
 	}
 
 	public function list_processo_qta_process()
@@ -359,12 +403,25 @@ class process extends Model
 		where p.mensagem_alerta ='1'
 		group by p.mensagem_alerta, p.processo_id;";
 
+		try {
 
-		$results = $this->db->prepare($sql);
-		$results->execute();
-		// $result = $this->db->query($sql);
 
-		return $results->fetchAll(PDO::FETCH_ASSOC);
+
+
+			$results = $this->db->prepare($sql);
+			$results->execute();
+			// $result = $this->db->query($sql);
+
+			return $results->fetchAll(PDO::FETCH_ASSOC);
+		} catch (PDOException  $e) {
+
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
+		}
 	}
 
 
@@ -387,7 +444,13 @@ class process extends Model
 
 			//forco o retorno ser um boleano
 			return filter_var($row['rdecnsmod'], FILTER_VALIDATE_BOOLEAN);
-		} catch (\Exception $e) {
+		} catch (PDOException $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			return false;
 		}
@@ -410,7 +473,14 @@ class process extends Model
 			$result->execute($dados);
 		} catch (\Exception $e) {
 
-			echo $e->getMessage();
+
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
+
 
 
 			$erros[] = [
@@ -451,7 +521,14 @@ class process extends Model
 			$result->execute($sql_up);
 		} catch (\Exception $e) {
 
-			echo $e->getMessage();
+
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
+
 
 
 			$erros[] = [
@@ -479,6 +556,13 @@ class process extends Model
 			$result = $this->db->prepare($sql);
 			$result->execute($dados);
 		} catch (\Exception $e) {
+
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			echo $e->getMessage();
 
@@ -508,12 +592,21 @@ class process extends Model
 
 		$result = $this->db->query($query);
 
-		if (!$result) {
-			echo "Ocorreu um erro na consulta.\n";
-			exit;
-		} else {
+		try {
+			if (!$result) {
+				echo "Ocorreu um erro na consulta.\n";
+				exit;
+			} else {
 
-			return $result->fetchAll(PDO::FETCH_ASSOC);
+				return $result->fetchAll(PDO::FETCH_ASSOC);
+			}
+		} catch (PDOException $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 		}
 	}
 
@@ -548,30 +641,40 @@ class process extends Model
 		}
 
 		$results = $this->db->prepare($sql);
-		$results->execute($params);
 
-		//ira receber um lote de ids para alterar para 0 resposta_json vazio
-		$up_status_one = [];
-		$up_mongo_data = [];
+		try {
+			$results->execute($params);
 
-		while ($row = $results->fetchAll(PDO::FETCH_ASSOC)) {
+			//ira receber um lote de ids para alterar para 0 resposta_json vazio
+			$up_status_one = [];
+			$up_mongo_data = [];
 
-			if (empty($row['resposta_json'])) {
+			while ($row = $results->fetchAll(PDO::FETCH_ASSOC)) {
 
-				$up_status_one = $row[0];
+				if (empty($row['resposta_json'])) {
+
+					$up_status_one = $row[0];
+				}
+				if (!isset($row['resposta_json'])) {
+
+					$up_mongo_data = $row[0];
+				}
 			}
-			if (!isset($row['resposta_json'])) {
 
-				$up_mongo_data = $row[0];
+			if (isset($up_mongo_data)) {
+
+				return $up_mongo_data;
 			}
+
+			self::up_zero_status($up_status_one['transacao_id']);
+		} catch (PDOException $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 		}
-
-		if (isset($up_mongo_data)) {
-
-			return $up_mongo_data;
-		}
-
-		self::up_zero_status($up_status_one['transacao_id']);
 	}
 
 	public function up_zero_status($ids)
@@ -588,6 +691,12 @@ class process extends Model
 
 			return true;
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			return $e->getMessage();
 		}
@@ -610,6 +719,12 @@ class process extends Model
 
 			return true;
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			return $e->getMessage();
 		}
@@ -631,16 +746,24 @@ class process extends Model
         AND nspname = 'progestor';
     ";
 
-		$results = $this->db->prepare($sql);
-		$results->execute();
-		return $results->fetchAll(PDO::FETCH_ASSOC);
+
+		try {
+			$results = $this->db->prepare($sql);
+			$results->execute();
+			return $results->fetchAll(PDO::FETCH_ASSOC);
+		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
+		}
 	}
+
 
 	public function count_new_quantidade()
 	{
-
-
-
 		$sql = "";
 		$sql = "SELECT 
     p.processo_id,
@@ -687,6 +810,12 @@ HAVING
 			$results->execute();
 			return $results->fetchAll(PDO::FETCH_ASSOC);
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			print_r($e->getMessage());
 		}
@@ -723,6 +852,12 @@ HAVING
 			$result->execute($dados);
 		} catch (PDOException $e) {
 			print_R("Erro na consulta: " . $e->getMessage());
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			return $e->getMessage();
 		}
 
@@ -756,6 +891,12 @@ HAVING
 
 			$result->execute($dados);
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			$this->db->rollback();
 
@@ -790,6 +931,12 @@ HAVING
 			$result->execute($dados);
 		} catch (PDOException $e) {
 			print_R("Erro na consulta: " . $e->getMessage());
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			return null;
 		}
 
@@ -840,6 +987,12 @@ HAVING
 			$result->execute($dados);
 		} catch (PDOException $e) {
 			print_R("Erro na consulta: " . $e->getMessage());
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			return null;
 		}
 
@@ -874,6 +1027,12 @@ HAVING
 			$result->execute($dados);
 		} catch (PDOException $e) {
 			print_R("Erro na consulta: " . $e->getMessage());
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			return null;
 		}
 
@@ -907,6 +1066,12 @@ HAVING
 			print_r('ESTOU SAINDO AQUI\n');
 		} catch (\Exception $e) {
 
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			echo "<pre>";
 			echo "erro vindo aqui\n";
 			print_r($e->getMessage());
@@ -974,6 +1139,12 @@ HAVING
 
 			return $results->fetchAll(PDO::FETCH_ASSOC);
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			print_r($e->getMessage());
 		}
 	}
@@ -997,6 +1168,12 @@ HAVING
 			return true;
 		} catch (\Exception $e) {
 			echo "<pre>";
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			print_r($e->getMessage());
 
@@ -1026,6 +1203,12 @@ HAVING
 			}
 			return $results->fetchAll(PDO::FETCH_ASSOC);
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			return [
 				'success' => false,
 				'error' => $e->getMessage()
@@ -1055,6 +1238,12 @@ HAVING
 			}
 			return $results->fetchAll(PDO::FETCH_ASSOC);
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			return [
 				'success' => false,
 				'error' => $e->getMessage()
@@ -1084,6 +1273,12 @@ HAVING
 			}
 			return $results->fetchAll(PDO::FETCH_ASSOC);
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			return [
 				'success' => false,
 				'error' => $e->getMessage()
@@ -1113,6 +1308,12 @@ HAVING
 			}
 			return $results->fetchAll(PDO::FETCH_ASSOC);
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			return [
 				'success' => false,
 				'error' => $e->getMessage()
@@ -1131,6 +1332,12 @@ HAVING
 			$result = $this->db->prepare($sql);
 			$result->execute($dados);
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			$erros[] = [
 				'msg' =>  $e->getMessage()
 			];
@@ -1180,6 +1387,12 @@ HAVING
 				return false;
 			}
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			$erros[] = [
 				'msg' =>  $e->getMessage()
 			];
@@ -1211,6 +1424,12 @@ HAVING
 
 			$result->execute($dados);
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			//   $conexaoBd->BD_COM->rollback();
 
@@ -1252,6 +1471,12 @@ HAVING
 				return false;
 			}
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			$erros[] = [
 				'msg' =>  $e->getMessage()
 			];
@@ -1277,6 +1502,12 @@ HAVING
 			$result = $this->db->prepare($sql);
 			$result->execute($dados);
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 
 			$erros[] = [
@@ -1305,6 +1536,12 @@ HAVING
 				'message' => 'Plugin inserido com sucesso'
 			];
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			echo "ERRO NO INSERT: " . $e->getMessage() . "\n";
 			return [
 				'success' => false,
@@ -1341,6 +1578,12 @@ HAVING
 				return false;
 			}
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			$erros[] = [
 				'msg' =>  $e->getMessage()
@@ -1391,6 +1634,12 @@ HAVING
 				return false;
 			}
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			$erros[] = [
 				'msg' =>  $e->getMessage()
@@ -1440,6 +1689,12 @@ HAVING
 				return false;
 			}
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			$erros[] = [
 				'msg' =>  $e->getMessage()
@@ -1476,6 +1731,12 @@ HAVING
 			// }
 			return $result->fetch(PDO::FETCH_ASSOC)['exists'] ? true : "null";
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			$erros[] = [
 				'msg' =>  $e->getMessage()
@@ -1537,6 +1798,12 @@ HAVING
 				return false;
 			}
 		} catch (\Exception $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 
 			$erros[] = [
 				'msg' =>  $e->getMessage()

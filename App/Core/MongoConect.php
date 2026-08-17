@@ -3,14 +3,19 @@
 namespace App\Core;
 
 use Exception;
-use Dotenv\Dotenv;
+
 use MongoDB\Client;
-// use MongoDB\Driver\Manager;
-// use MongoDB\Driver\BulkWrite;
-// use MongoDB\Driver\Exception\Exception;
+use PDO;
+use PDOException;
+use Core\MailClass;
+// use Core\Database;
+use Core\AppManipularError;
 
 class MongoConect
 {
+    protected $mail;
+    protected $manipulador;
+
     private static $instance = null;
     private $client;
     private $dbname;
@@ -28,25 +33,27 @@ class MongoConect
 
     private function __construct()
     {
-        // O vlucas/phpdotenv carregado via Composer substitui chamadas manuais se necessário.
-        // Certifique-se de que a classe Env está mapeada ou use: \Dotenv\Dotenv::createImmutable(__DIR__ . '/../../')->load();
 
-        $host = getenv('BD_MONGO_HOST');
-        $port = getenv('BD_MONGO_PORT') ?: 27017;
-        $user = getenv('BD_MONGO_USER');
-        $pass = getenv('BD_MONGO_PASS');
-        $BD_MONGO_BD_AUTH_SOURCE = getenv('BD_MONGO_BD_AUTH_SOURCE');
+        $this->mail = new MailClass();
+        $this->manipulador = new AppManipularError(__DIR__ . '/../error/error_banco_mongo.txt');
 
-        $this->dbname = getenv('BD_MONGO_BD_NAME');
-        $this->db_colletion = getenv('BD_MONGO_BD_COLLETION');
-        $this->db_colletion_json = getenv('BD_MONGO_BD_COLLETION_JSON');
-        $this->db_colletion_info = getenv('BD_MONGO_BD_COLLETION_INFO');
-        $this->db_colletion_jobs = getenv('BD_MONGO_BD_COLLETION_JOBS');
-        $this->db_colletion_json_dados = getenv('BD_MONGO_BD_COLLETION_JSON_DADOS');
-        $this->db_colletion_json_dados_reprocess = getenv('BD_MONGO_BD_COLLETION_JSON_DADOS_REPROCESS');
-        $this->db_colletion_json_dados_paralizar = getenv('BD_MONGO_BD_COLLETION_JSON_DADOS_PARALIZAR');
-        $this->db_colletion_json_dados_cancelar = getenv('BD_MONGO_BD_COLLETION_JSON_DADOS_CANCELAR');
-        $this->db_colletion_json_dados_prepago = getenv('BD_MONGO_BD_COLLETION_JSON_DADOS_PREPAGO');
+        $host =  $_ENV['BD_MONGO_HOST'];
+        var_dump($host);
+        $port =  $_ENV['BD_MONGO_PORT'] ?: 27017;
+        $user =  $_ENV['BD_MONGO_USER'];
+        $pass =  $_ENV['BD_MONGO_PASS'];
+        $BD_MONGO_BD_AUTH_SOURCE = $_ENV['BD_MONGO_BD_AUTH_SOURCE'] ?? 'admin';
+
+        $this->dbname =  $_ENV['BD_MONGO_BD_NAME'];
+        $this->db_colletion =  $_ENV['BD_MONGO_BD_COLLETION'];
+        $this->db_colletion_json =  $_ENV['BD_MONGO_BD_COLLETION_JSON'];
+        $this->db_colletion_info =  $_ENV['BD_MONGO_BD_COLLETION_INFO'];
+        $this->db_colletion_jobs =  $_ENV['BD_MONGO_BD_COLLETION_JOBS'];
+        $this->db_colletion_json_dados =  $_ENV['BD_MONGO_BD_COLLETION_JSON_DADOS'];
+        $this->db_colletion_json_dados_reprocess =  $_ENV['BD_MONGO_BD_COLLETION_JSON_DADOS_REPROCESS'];
+        $this->db_colletion_json_dados_paralizar =  $_ENV['BD_MONGO_BD_COLLETION_JSON_DADOS_PARALIZAR'];
+        $this->db_colletion_json_dados_cancelar =  $_ENV['BD_MONGO_BD_COLLETION_JSON_DADOS_CANCELAR'];
+        // $this->db_colletion_json_dados_prepago =  $_ENV['BD_MONGO_BD_COLLETION_JSON_DADOS_PREPAGO'];
 
         $auth = $user ? "$user:$pass@" : "";
         $uri = "mongodb://{$auth}{$host}:{$port}/{$user}?authSource={$BD_MONGO_BD_AUTH_SOURCE}";
@@ -57,10 +64,35 @@ class MongoConect
         ];
 
         try {
-            // Agora usamos o Client do Composer em vez do Manager nativo
+            // 1. Instancia o cliente (apenas guarda a configuração)
             $this->manager = new Client($uri, $options);
+
+            // 2. FORÇA A CONEXÃO REAL (Faz um ping no banco)
+            // Sem isso, o catch NUNCA vai capturar quedas de servidor ou senhas erradas nesta etapa
+            $this->manager->selectDatabase('admin')->command(['ping' => 1]);
         } catch (Exception $e) {
-            die("Erro ao conectar ao MongoDB via Composer: " . $e->getMessage());
+
+            $manipulador = new AppManipularError(__DIR__ . '/../error/error_banco_mongo.txt');
+
+            $assunto = $_ENV['SMTP_SUBJECT'] ?? getenv('SMTP_SUBJECT') ?? 'Erro de conexão com o banco';
+
+            $destinatario = $_ENV['SMTP_DESTINATION'] ?? getenv('SMTP_DESTINATION') ?? null;
+            $corpo = "Falha crítica de conexão com o MongoDB:\n\n" . $e->getMessage();
+
+            // Envia o e-mail imediatamente
+            if (!empty($destinatario)) {
+                $mail = new MailClass();
+                $mail->enviar_email($destinatario, $assunto, $corpo);
+            }
+
+            $manipulador->manipuladorDeErros(
+                $e->getCode(),
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            );
+
+            die("Erro ao conectar ao MongoDB : " . $e->getMessage());
         }
     }
 
@@ -147,5 +179,32 @@ class MongoConect
     public function getClient()
     {
         return $this->client;
+    }
+    public function testarConexao()
+    {
+        try {
+            // Seleciona o banco admin para rodar o comando de ping
+            $db = $this->manager->selectDatabase('admin');
+
+            // Executa o comando ping
+            $cursor = $db->command(['ping' => 1]);
+            $resultado = $cursor->toArray();
+
+            // Se retornou ok, a conexão está funcionando
+            if (isset($resultado[0]['ok']) && $resultado[0]['ok'] == 1) {
+                return true;
+            }
+
+            return false;
+        } catch (Exception $e) {
+            // Registra o erro se falhar
+            $this->manipulador->manipuladorDeErros(
+                $e->getCode(),
+                "Falha no teste de conexão: " . $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            );
+            return false;
+        }
     }
 }

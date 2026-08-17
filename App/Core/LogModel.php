@@ -1,5 +1,7 @@
 <?php
-require_once __DIR__ . '/../core/MongoConect.php';
+// require_once __DIR__ . '/../core/MongoConect.php';
+
+use App\Core\MongoConect;
 
 class LogModel
 {
