@@ -6,6 +6,7 @@ namespace App\Models;
 use PDO;
 use Core\Model;
 use Core\Logs;
+use RuntimeException;
 use PDOException;
 use Core\Functions;
 use Core\AppManipularError;
@@ -15,14 +16,21 @@ error_reporting(E_ALL);
 
 class GravarUpdateDieProcess extends Model
 {
+    protected $funciton;
+    protected $manipulador;
+    ##[Override]
 
     protected $filtros;
 
     public function __construct()
     {
         parent::__construct();
-        // require_once __DIR__ . '/../models/process.php';
-        // $this->filtros = new process();
+
+        $this->funciton = new Functions();
+
+        $this->manipulador = new AppManipularError(
+            __DIR__ . '/../../error/error_insert.txt'
+        );
     }
 
     public function UpdateBatchDieProcess($dados)
@@ -63,6 +71,12 @@ class GravarUpdateDieProcess extends Model
             // Commit final (caso não seja múltiplo de 200)
             $this->db->commit();
         } catch (\Exception $e) {
+            $this->manipulador->manipuladorDeErros(
+                $e->getCode(),
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            );
             $this->db->rollBack();
             throw $e;
         }

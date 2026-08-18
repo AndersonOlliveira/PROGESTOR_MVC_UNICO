@@ -6,11 +6,21 @@ use PDO;
 use Core\Model;
 use Core\Logs;
 use PDOException;
+use RuntimeException;
 use Core\Functions;
 use Core\AppManipularError;
 
 class GravaRespostaPlugin extends Model
 {
+    protected $funciton;
+    protected $manipulador;
+    ##[Override]
+    public function __construct()
+    {
+        $this->funciton  = new Functions();
+        $this->manipulador = new AppManipularError(__DIR__ . '/../../error/error_insert.txt');
+        parent::__construct();
+    }
 
     public  function execute($plugin, $resposta, $transacaoId, $header = "")
     {
@@ -69,6 +79,9 @@ class GravaRespostaPlugin extends Model
             return false;
         }
 
+        if (!$this->db instanceof PDO) {
+            throw new RuntimeException('Conexão PDO não inicializada.');
+        }
 
         // Inicia a transação (insert em lote)
         $this->db->beginTransaction();
@@ -124,6 +137,12 @@ class GravaRespostaPlugin extends Model
 
 
         } catch (PDOException $e) {
+            $this->manipulador->manipuladorDeErros(
+                $e->getCode(),
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            );
             $this->db->rollBack();
             $INFO_ID  = 'ERRO INSERT PLUGLIN ' . $e->getMessage();
             $mensagem_erro['ERRO-PLUGIN'] = $INFO_ID;

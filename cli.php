@@ -21,7 +21,7 @@ Env::load(__DIR__);
 
 $app = new AppProcessor();
 
-$id = 240;
+$id = 244;
 $quantidade = 1;
 
 $tempoEspera = 20;
@@ -38,7 +38,7 @@ register_shutdown_function(function () {
 
         echo "[" . date('H:i:s') . "] " . $mensagem;
 
-     
+
         $manipulador = new AppManipularError(__DIR__ . '/../error/error_iniciar.txt');
         $manipulador->manipuladorDeErros($error['type'], $error['message'], $error['file'], $error['line']);
 
@@ -54,9 +54,7 @@ register_shutdown_function(function () {
 while (true) {
 
     try {
-        // ini_set('memory_limit', '10M'); 
-        // $stringInfinita = str_repeat("MORTAL", 1024 * 1024 * 50);
-
+     
         echo "[" . date('H:i:s') . "] Executando processo CLI...\n";
 
         $app->processar(

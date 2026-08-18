@@ -87,15 +87,6 @@ class Arquivos
 	public function updados_modulos($dados)
 	{
 
-
-		echo '<pre>';
-
-
-		echo  "meus dados enviados\n";
-		print_r($dados);
-		die();
-
-
 		$valor = 0;		## somo os valores e gero um valos
 		foreach ($dados as $values) {
 			#verifico se e um array 
@@ -711,17 +702,10 @@ class Arquivos
 	{
 
 		$linha = "";
-
-
-
 		$i = 0;
 		foreach ($arrValores as $retPlg) { // cada ocorrencia do registro/plugin
 
 			$retPlg = self::transformaArrayPlgEmSimples($retPlg);
-
-
-
-
 
 			// inclui campos na linha de acordo com a configuracao
 			foreach ($configuracao->campos as $indice) {
@@ -882,8 +866,6 @@ class Arquivos
 
 
 
-
-
 		foreach ($dadosP as $key => $values) {
 
 			if (isset($values->paralisado) && !isset($values->data_finalizacao)) {
@@ -892,22 +874,7 @@ class Arquivos
 					$prazoMaximos = $this->filtros->get_limit_day_contrato($values->contrato);
 					$prazoMaximo = 	2;
 
-					if (empty($values->data)) {
-						continue;
-					}
-
 					$data_paralisacao = new DateTime($values->data);
-
-					// Loop para adicionar a quantidade X de dias úteis para considierar dias ulteis
-					// for ($i = 0; $i < $prazoMaximo; $i++) {
-					// 	$data_paralisacao->modify('+1 weekday');
-					// }
-
-					// echo "<pre>";
-					// echo "meu prazo maximo\n ";
-					// echo "meu prazo maximo" . $prazoMaximos;
-
-					// print_r($prazoMaximos);
 
 					if ($prazoMaximos === false) {
 						continue;
@@ -935,16 +902,8 @@ class Arquivos
 			} //final do if inicial
 
 			//FINALIZAR OS DADOS 
-
 			$pegarDadosfinalizar[] = $this->filtros->count_process_finalizado_paralizado($values->id_processo);
 		}
-
-
-		// echo "<pre>";
-		// echo "lista de dados paralizados\n";
-		// print_r($pegarDadosfinalizar);
-
-		// die();
 
 		$valorTotal_auxilar = 0;
 		//aqu vou trocar os status
@@ -954,7 +913,7 @@ class Arquivos
 			if ($value['total'] == $value['finalizados'] && ($value['mensagem_alerta'] === null || $value['mensagem_alerta'] === '')) {
 				$redeLoja = $this->CapturaRedeLojaDoContrato->execute($value['contrato']);
 
-				list($valorLoteConsulta, $retornoCalculo) = $this->BuscaValorLotePorConsulta->calcula($value['consultas'], $redeLoja['rede'], $value['total'], $value['contrato']);
+				list($valorLoteConsulta, $retornoCalculo) = $this->BuscaValorLotePorConsulta->calcula($value['consultas'], $redeLoja['rede'], $value['total']);
 				$valorTotal_auxilar = +$valorLoteConsulta;
 
 				$result_alter_ = $this->filtros->alter_valores_process_paralizar($value['processo_id'], $valorTotal_auxilar);
@@ -979,13 +938,6 @@ class Arquivos
 					echo "INSUCESSO !\n";
 					print_R($retorno_up_mongo);
 				}
-
-
-				// if (isset($result_alter_)) {
-				// 	echo "<pre>";
-				// 	echo "Primeiro retorno do Atualizar se tiver dados ou erro\n";
-				// 	print_r($result_alter_);
-				// }
 			}
 		}
 
@@ -993,31 +945,12 @@ class Arquivos
 		$quantidade_dados_paralizados_sucessos = [];
 
 
-		echo "<pre>";
-		echo "Segundo retorno do dados_localizado se tiver dados ou erro\n";
-		print_r($dados_localizado);
-
-		// die();
-
-
 		foreach ($dados_localizado as $chave => $valores) {
-			// $qtLimit = 1;
-			echo "<pre>";
-			echo "Terceiro passo retorno do dados_localizado se tiver dados ou erro\n";
+
 
 			$retorno_dados_paralizados = $this->filtros->list_processo($valores->id_processo, $qtLimit, true);
-			echo "<pre>";
-			echo "Quarto passo retorno do dados_localizado se tiver dados ou erro\n";
-
-			var_dump($retorno_dados_paralizados);
 
 			$lista_dados_paralizados = $this->filtros->lista_data_paralisados($valores->id_processo);
-			//pego os processo que esta com o status 0 para trocar para 17
-
-			echo "<pre>";
-			echo "Quinto passo retorno do lista_dados_paralizados se tiver dados ou erro\n";
-
-			var_dump($lista_dados_paralizados);
 
 
 			if (isset($retorno_dados_paralizados) && !empty($retorno_dados_paralizados)) {
@@ -1043,27 +976,19 @@ class Arquivos
 		if (isset($quantidade_dados_paralizados_sucessos) && !empty($quantidade_dados_paralizados_sucessos)) {
 			$valorTotal = 0;
 
-			echo "<pre>";
-
-			print_r('SAINDO DENTRO DO FOREACH');
-
 			var_dump($quantidade_dados_paralizados_sucessos);
-
-
 
 
 
 			foreach ($quantidade_dados_paralizados_sucessos as $valores_busca => $val) {
 
 				echo "<pre>";
-				echo "o que esta saindo aquui no vaal!!!\n";
+				echo "QUE VALOR ESTA ESTA SAINDO AQUI!\n";
 
 				print_r($val);
-
 				if ($val['total'] == $val['finalizados'] && ($val['mensagem_alerta'] === null || $val['mensagem_alerta'] === '')) {
-
 					$redeLoja = $this->CapturaRedeLojaDoContrato->execute($val['contrato']);
-					list($valorLoteConsulta, $retornoCalculo) = $this->BuscaValorLotePorConsulta->calcula($val['consultas'], $redeLoja['rede'], $val['total'], $val['contrato']);
+					list($valorLoteConsulta, $retornoCalculo) = $this->BuscaValorLotePorConsulta->calcula($val['consultas'], $redeLoja['rede'], $val['total']);
 					$valorTotal = +$valorLoteConsulta;
 					if ($val['mensagem_alerta'] != 1) {
 						$result_alter = $this->filtros->alter_valores_process_paralizar($val['processo_id'], $valorTotal);
@@ -1076,7 +1001,7 @@ class Arquivos
 
 					$dados_atualizar = [
 						'id_processo' => (string)$val['processo_id'],
-						'processo_finalizado' => 'Jobs interrompidos pelo sistema pois o prazo de ' . $prazoMaximos  . ' dia foi ultrapassado na data de',
+						'processo_finalizado' => 'Jobs finalizado pelo sistema, pois passou do prazo de ' . $prazoMaximos,
 						'data_finalizacao' =>  $hoje,
 						'valor_job' => 'valor atualizado do job  para ' . $valorTotal
 					];
@@ -1105,18 +1030,10 @@ class Arquivos
 	public function process_finalizar_status_erros($dados)
 	{
 
-		echo "<pre>";
-
-		print_R('estou chegando aqui');
-
-
 		$somatar = 0;
 
 		foreach ($dados as $key => $valores) {
 
-			// echo "<pre>";
-
-			// print_r($valores);
 			$somar =  $valores['qtd_registros_processado'] + $valores['qtd_status_egth'];
 
 			if ($somar == $valores['qtd_registros']) {
@@ -1126,45 +1043,32 @@ class Arquivos
 
 				print_r($valores);
 
-				//localizado vou realizar o update na base 
 				$resultado = $this->filtros->up_status_eight($valores);
-				// echo "<pre>";
-				// echo "meu resultado vindo aqui?\n";
 
-				// print_r($resultado);
 
 
 				if (isset($resultado) && $resultado['status'] == 2) {
 
+					echo "<pre>";
+					echo "passei no if?\n";
+
+					var_dump($resultado);
+					var_dump($valores['processo_id']);
 
 					//realizo o update para true dentro do processo para finalizar o job e gerar o resultado.s
 					$result_up = $this->filtros->up_status_finish_eight($valores['processo_id']);
+
+					echo "<pre>";
+					echo "passei no if?\n";
+
+					var_dump($result_up);
+					// var_dump($valores['processo_id']);
+
+
 				}
 			}
 		}
 	}
-
-
-	// public function process_finalizar_status_parar_processos($dados_enviados)
-	// {
-
-	//    $dados_para_alterar = [];
-
-	// 	foreach ($dados_enviados as $key => $values) {
-
-	// 		if ($values['status'] == 12) {
-	// 			$contar = 100;
-
-	// 			$returns =  $this->filtros->list_processo_parar($values['processo_id'], $contar, false);
-
-	// 			if (isset($returns)) {
-	// 				$re = self::get_dados_id($returns);
-	// 			}
-	// 		}
-
-	// 		if($values['status'] >)
-	// 	}
-	// }
 
 	public function treat_dados_die($dados)
 	{
@@ -1176,8 +1080,6 @@ class Arquivos
 			echo  "<pre>";
 			echo  "MEU STATUS 12";
 			print_r($die_process['qta_processar_status']);
-			//$die_process['qta_processar_status']
-			//varialvel acima recebe o status 12 assim que o valor chegar em 0, ele vai fazer o processo para pegar o que e status 3 processados e fazer as atualizacoes dos valores
 
 			if ($die_process['qta_processar_status'] > 0) {
 				$idBusca = $die_process['processo_id'];
@@ -1185,11 +1087,6 @@ class Arquivos
 				$idBusca = $die_process['processo_id'];
 			}
 		}
-
-		echo "<pre>";
-		echo "MEU ID DE BUSCA";
-
-		print_r($idBusca);
 
 		if (isset($idBusca)) {
 
@@ -1206,23 +1103,8 @@ class Arquivos
 		$retorno_path_arquivo = $this->arquivos_json->env_json('path_arquivos_info');
 		$arquivos = $retorno_path_arquivo  . DIRECTORY_SEPARATOR .  'meu_arquivo.json';
 		$dados_mongo = [];
-
-		// $dados_mongo = $this->instance->get_dados_parar($dados);
-
-		// $documento = file_get_contents($arquivos);
-
-		// $dados_json = json_decode($documento, true);
-
-		// $novoJson = null;
-
 		$upProcessDaddos = [];
 		$valorTotal = 0;
-
-
-		echo "<pre>";
-		echo "passei nos dados\n";
-
-		print_r($dados);
 
 		foreach ($dados as $key => $valores) {
 
@@ -1232,7 +1114,7 @@ class Arquivos
 			if ($valores['qta_processar_status'] == 0 && $valores['qta_paralizado'] > 0) {
 
 				$redeLoja =  $this->CapturaRedeLojaDoContrato->execute($valores['contrato']);
-				list($valorLoteConsulta, $modulo) =	$this->BuscaValorLotePorConsulta->calcula($valores['codcns'], $redeLoja['rede'], $valores['qta_processado'], $valores['contrato']);
+				list($valorLoteConsulta, $modulo) =	$this->BuscaValorLotePorConsulta->calcula($valores['codcns'], $redeLoja['rede'], $valores['qta_processado']);
 				$upProcessDaddos[] = [
 					'processo_id' => $valores['processo_id'],
 					'valor_lote' => $valorLoteConsulta,
@@ -1246,7 +1128,7 @@ class Arquivos
 				//update na tabela processo
 			} else if ($valores['qta_processar_status'] == 0 && $valores['qta_processado'] > 0) {
 				$redeLoja =  $this->CapturaRedeLojaDoContrato->execute($valores['contrato']);
-				list($valorLoteConsulta, $modulo) =	$this->BuscaValorLotePorConsulta->calcula($valores['codcns'], $redeLoja['rede'], $valores['qta_processado'], $valores['contrato']);
+				list($valorLoteConsulta, $modulo) =	$this->BuscaValorLotePorConsulta->calcula($valores['codcns'], $redeLoja['rede'], $valores['qta_processado']);
 				$upProcessDaddos[] = [
 					'processo_id' => $valores['processo_id'],
 					'valor_lote' => $valorLoteConsulta,
@@ -1264,7 +1146,6 @@ class Arquivos
 		echo "passei nos dados\n";
 
 		print_r($upProcessDaddos);
-
 		// die();
 		foreach ($dados as $index => $key) {
 			if (is_array($key) && isset($key['processo_id'])) {
@@ -1273,10 +1154,11 @@ class Arquivos
 					if ($key['processo_id'] == $processData['processo_id']) {
 						$modulo = $processData['modulo'];
 
-						$msg = 'O Total de ' . $processData['total_registros_parados'] . ' registros do processo (job) foi pausado. o id ' . $processData['processo_id'] . '
-						     gerado no valor de R$ ' . number_format($valorLoteConsulta, 2, ',', '.') .  ' refereente a ' . $valores['qta_processado'] . ' registros processados. Valor atualizado na tabela!';
+						$msg = 'Foi Parado total de  ' . $processData['total_registros_parados'] . ' registros do processo Id ' . $processData['processo_id'] .
+							' Gerado no valor de R$ ' . number_format($valorLoteConsulta, 2, ',', '.') .  ' Refereente a ' . $valores['qta_processado'] . ' registros processados Atualizado Valor na tabela!';
 						if ($modulo) {
-							$msg .=  "<br><span style='color:red;font-weight:bold'> Atenção: esta consulta é do tipo modular. O valor informado representa o teto máximo, e poderá sofrer ajustes ao final do processamento.</span>";
+							$msg .=  "<br><span style='color:red;font-weight:bold'> Atenção: Esta consulta que é do tipo modular, o valor informado representa o teto máximo 
+                            e poderá ser ajustado ao final do processamento.</span>";
 						}
 
 						// Atualizar dados no JSON

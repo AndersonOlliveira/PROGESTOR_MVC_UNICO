@@ -51,8 +51,8 @@ class process extends Model
 			progestor.processo p ON p.processo_id = t.id_processo 
 		WHERE 
 		--revovmento o 3 pois ele já e o resultado final, quando faz a busca dento do mongo ele não acha os dados e gera uma demora para concluir os dados
-			t.status in (12) AND 
-			p.finalizado = false AND
+			t.status in (3) AND 
+			p.finalizado = true AND
 			p.error = false";
 
 		try {

@@ -34,7 +34,7 @@ class GerarOutput
         // require_once __DIR__ . '/../models/CapturaDadosTransacoesJob.php';
         $this->CapturaDadosTransacoesJob = new CapturaDadosTransacoesJob();
 
-        require_once __DIR__ . '/../models/RespostaPluginsTrasancao.php';
+        // require_once __DIR__ . '/../models/RespostaPluginsTrasancao.php';
         $this->CapturaRespostasPluginsTransacao = new RespostaPluginsTrasancao();
 
         // require_once __DIR__ . '/Configs.php';

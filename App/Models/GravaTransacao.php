@@ -9,9 +9,24 @@ use PDOException;
 use Core\Functions;
 use Core\AppManipularError;
 
+
+
 class GravaTransacao extends Model
 {
 
+	protected $funciton;
+	protected $manipulador;
+	##[Override]
+	public function __construct()
+	{
+	 parent::__construct();
+
+		$this->funciton = new Functions();
+
+		$this->manipulador = new AppManipularError(
+			__DIR__ . '/../../error/error_insert.txt'
+		);
+	}
 
 	public function execute($processoId, $campoAquisicao, $status = 0, $sucesso = true, $resposta = null, $respostaJson = null)
 	{
@@ -48,6 +63,12 @@ class GravaTransacao extends Model
 
 			return $idFake;
 		} catch (PDOException $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			echo "ERRO AO INSERIR: " . $e->getMessage() . "\n";
 			print_r($dados);
 		}
@@ -72,6 +93,9 @@ class GravaTransacao extends Model
 		if (empty($registros)) {
 			return false;
 		}
+		if (!$this->db instanceof PDO) {
+    throw new RuntimeException('Conexão PDO não inicializada.');
+}
 
 		// Inicia a transação (insert em lote)
 		$this->db->beginTransaction();
@@ -107,6 +131,12 @@ class GravaTransacao extends Model
 			$this->db->commit();
 			return true;
 		} catch (PDOException $e) {
+			$this->manipulador->manipuladorDeErros(
+				$e->getCode(),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			);
 			$this->db->rollBack();
 			throw $e;
 		}
