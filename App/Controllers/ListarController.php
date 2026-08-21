@@ -8,6 +8,7 @@ use Core\Model;
 use App\Models\process;
 use App\Models\instance;
 use App\Utilis\Arquivos;
+use App\Utilis\Gerador;
 use App\Utilis\Mongo;
 use App\Utilis\Funcoes;
 use App\Utilis\Config;
@@ -32,12 +33,14 @@ class ListarController extends Controller
     protected $tratamento;
     protected $utils_functions;
     protected $arquivos_json;
+    protected $geradador;
 
 
     public function __construct()
     {
         // require_once __DIR__ . '/../Utilis/Arquivos.php';
         $this->tratamento = new Arquivos();
+        $this->geradador = new Gerador();
 
         $this->utilss = new instance();
 
@@ -58,6 +61,15 @@ class ListarController extends Controller
     }
 
 
+    public function arquivos($idProcesso = null, $qtLimit = null)
+    {
+
+        echo "<pre>";
+        print_r($idProcesso);
+        print_r('estou chegando na chamada do gerador');
+    }
+
+
     public function listar($idProcesso = null, $qtLimit = null)
     {
 
@@ -70,6 +82,12 @@ class ListarController extends Controller
         $returns = $return->list_processo($idProcesso, $qtLimit);
 
         $re = $this->utils->get_dados_id($returns);
+
+        // echo "<pre>";
+        // print_R('ESTOU CHEGANDO AQUI NO CONTROLLER!!!');
+        // print_R($re);
+
+        // die();
 
         $return_valores = $return->count_new_quantidade();
 

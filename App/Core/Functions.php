@@ -53,4 +53,27 @@ class Functions
     {
         echo "[" . date('H:i:s') . "] $mensagem\n";
     }
+     private static function latin1ize($data)
+{
+    if (is_array($data)) {
+        foreach ($data as $key => $value) {
+            $data[$key] = self::latin1ize($value);
+        }
+    } elseif (is_string($data)) {
+        return trim(
+            mb_convert_encoding(
+                $data,
+                'ISO-8859-1',
+                'UTF-8'
+            )
+        );
+    }
+
+    return $data;
+}
+
+    public static function convertToLatin1($data)
+    {
+        return self::latin1ize($data);
+    }
 }

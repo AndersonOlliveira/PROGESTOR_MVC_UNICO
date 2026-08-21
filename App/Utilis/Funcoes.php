@@ -21,7 +21,7 @@ class Funcoes
 
 		return sprintf("%.{$decimals}f %s", $bytes / pow(1024, $factor), $sizes[$factor]);
 	}
-	public static function tamPasta($dir)
+	public  function tamPasta($dir)
 	{
 		$total = 0;
 
@@ -42,5 +42,20 @@ class Funcoes
 		}
 
 		return $total;
+	}
+	public  function limpaConteudoArquivo($string)
+	{
+
+		$string = preg_replace('/[^a-zA-Z0-9_ %\[\]\(\n)\.\;\(\)%&-]/s', '', $string);
+		return $string;
+	}
+
+
+	public  function garantirUtf8($texto)
+	{
+
+		return mb_check_encoding($texto, 'UTF-8')
+			? $texto
+			: mb_convert_encoding($texto, 'UTF-8', 'ISO-8859-1');
 	}
 }

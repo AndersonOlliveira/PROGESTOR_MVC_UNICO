@@ -31,26 +31,37 @@ class MontaJsonConfigEHeadersDaConsulta extends Model
 		$config = array();
 		$return = array();
 
-
 		$plugins = $this->capturaPlugins->execute($codConsulta);
+
+		echo "<pre>";
+		echo "LISTA COM OS \n";
+		print_R($plugins);
+
+
 		$header = "";
 		foreach ($plugins as $plugin) {
 
-
-
 			$campos = $this->CapturaCamposDoPlugin->execute($plugin['plugin']);
+
+			echo "<pre>";
+			echo "PLUGIN COM CAMPOS DA CONSULTA?\n";
+			print_R($campos);
+
 
 			$separar = (!empty($plugin['qt_ocorrencias']) && $plugin['qt_ocorrencias'] > 1);
 			$key = 'header_' . $plugin['plugin'];
+
 
 			if (!isset($return[$key])) {
 				$return[$key] = '';
 			}
 
+
 			$i = 1;
 			$camposPlg = [];
 
 			foreach ($campos as $c) {
+
 				$camposPlg[] = $i;
 
 				if ($separar) {

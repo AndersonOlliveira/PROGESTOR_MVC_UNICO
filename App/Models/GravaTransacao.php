@@ -19,7 +19,7 @@ class GravaTransacao extends Model
 	##[Override]
 	public function __construct()
 	{
-	 parent::__construct();
+		parent::__construct();
 
 		$this->funciton = new Functions();
 
@@ -93,9 +93,9 @@ class GravaTransacao extends Model
 		if (empty($registros)) {
 			return false;
 		}
-		if (!$this->db instanceof PDO) {
-    throw new RuntimeException('Conexão PDO não inicializada.');
-}
+		// 		if (!$this->db instanceof PDO) {
+		//     throw new RuntimeException('Conexão PDO não inicializada.');
+		// }
 
 		// Inicia a transação (insert em lote)
 		$this->db->beginTransaction();

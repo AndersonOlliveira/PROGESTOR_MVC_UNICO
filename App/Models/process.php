@@ -51,8 +51,8 @@ class process extends Model
 			progestor.processo p ON p.processo_id = t.id_processo 
 		WHERE 
 		--revovmento o 3 pois ele já e o resultado final, quando faz a busca dento do mongo ele não acha os dados e gera uma demora para concluir os dados
-			t.status in (3) AND 
-			p.finalizado = true AND
+			t.status in (12) AND 
+			p.finalizado = false AND
 			p.error = false";
 
 		try {
@@ -99,31 +99,32 @@ class process extends Model
 
 		$sql = "";
 		$sql = "SELECT p.processo_id, p.contrato,
-			p.rede,
-			p.codcns,
-			p.nome_arquivo,
-			p.aceite_execucao,
-			p.mensagem_alerta,
-			p.data_cadastro,
-			p.configuracao_json,
-			p.campos_aquisicao,
-			p.loja,
-			p.finalizado,
-			p.data_finalizacao,
-			p.pause,
-			t.transacao_id,
-			t.id_processo,
-			t.resposta_json
-			FROM
-		    progestor.transacao t INNER JOIN 
-			progestor.processo p ON p.processo_id = t.id_processo 
-		WHERE 
-			t.status in (12,3) AND 
-			p.mensagem_alerta = 'parar_processo'
-			AND 
-			--p.contrato = 417039 AND
-			(p.finalizado = false or p.finalizado = true) AND 
-			p.error = false";
+                        p.rede,
+                        p.codcns,
+                        p.nome_arquivo,
+                        p.aceite_execucao,
+                        p.mensagem_alerta,
+                        p.data_cadastro,
+                        p.configuracao_json,
+                        p.campos_aquisicao,
+                        p.loja,
+                        p.finalizado,
+                        p.data_finalizacao,
+                        p.pause,
+                        t.transacao_id,
+                        t.id_processo,
+                        t.resposta_json
+                        FROM
+                    progestor.transacao t INNER JOIN
+                        progestor.processo p ON p.processo_id = t.id_processo
+                WHERE
+                        t.status in (12) AND
+                        p.mensagem_alerta = 'parar_processo'
+                        AND
+                        --p.contrato = 417039 AND
+                        --colocado para pegar a condicicao e atualizar a tabela
+                        (p.finalizado = false or p.finalizado = true) AND
+                        p.error = false";
 
 
 		$params = [];

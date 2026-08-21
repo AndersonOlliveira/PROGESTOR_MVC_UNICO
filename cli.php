@@ -21,8 +21,8 @@ Env::load(__DIR__);
 
 $app = new AppProcessor();
 
-$id = 244;
-$quantidade = 1;
+$id = 253;
+$quantidade = 1000;
 
 $tempoEspera = 20;
 
@@ -54,7 +54,7 @@ register_shutdown_function(function () {
 while (true) {
 
     try {
-     
+
         echo "[" . date('H:i:s') . "] Executando processo CLI...\n";
 
         $app->processar(

@@ -9,7 +9,7 @@ use DateTime;
 use App\Utilis\Config;
 use App\Models\process;
 use App\Models\instance;
-use App\Models\CapturaCamposDoPlugin;
+use Core\Functions;
 use App\Models\CapturaPluginsDaConsulta;
 use App\Models\GravaTransacao;
 use App\Models\GravaRespostaPlugin;
@@ -41,6 +41,7 @@ class Arquivos
 	protected $BuscaValorLotePorConsulta;
 	protected $GravarUpdateDieProcess;
 	protected $arquivos_json;
+	protected $function;
 
 
 	public function __construct()
@@ -71,6 +72,7 @@ class Arquivos
 
 		// require_once __DIR__ . '/../models/instance.php';
 		$this->instance = new instance();
+		$this->function  = new Functions();
 
 		// require_once __DIR__ . '/../models/CapturaRedeLojaDoContrato.php';
 		$this->CapturaRedeLojaDoContrato = new CapturaRedeLojaDoContrato();
@@ -140,21 +142,13 @@ class Arquivos
 		$start = hrtime(true);
 		echo "<pre>";
 		echo "dados DO dados\n";
-		print_r($dados);
+		// print_r($dados);
 
 		$resultadosMongo = $this->utils->findByMultiple($dados);
-
-		echo "<pre>";
-		echo "RESULTADO DO MONGO\n";
-		print_r($resultadosMongo);
-
-		// die();
-
-
 		echo "<pre>";
 		echo "ESTOU VINDO NA MINHA GET DADOS ID\n";
 
-		print_r($dados);
+		// print_r($dados);
 
 		$indexado = [];
 
@@ -180,6 +174,7 @@ class Arquivos
 			$dados[$key]['resultado'] = $indexado[$chave] ?? null;
 		}
 
+
 		$end = hrtime(true);
 		$executionTime = ($end - $start) / 1e9; // Converte para segundos
 		echo "Tempo: " . $executionTime . " segundos";
@@ -190,13 +185,13 @@ class Arquivos
 			return !empty($row['resultado']);
 		}));
 
-		if (isset($result_empty) || isset($result_resposta)) {
+		// if (isset($result_empty) || isset($result_resposta)) {
 
-			self::up_resultado($result_empty, $result_resposta);
-		} else {
+		// 	self::up_resultado($result_empty, $result_resposta);
+		// } else {
 
-			echo 'Campos Json Resposta esta vazio';
-		}
+		// 	echo 'Campos Json Resposta esta vazio';
+		// }
 
 		$retorno = self::tratamento_dados($dados);
 	}
@@ -223,14 +218,9 @@ class Arquivos
 	public function tratamento_dados($row_data)
 	{
 		echo "<pre>";
-
-		print_r($row_data);
+		echo "ENVIADO PARA O ROW DATA? TRATAMENTO?";
 
 		echo "tenho o resultado do tratamento dos dados\n";
-
-		// die();
-
-
 
 		$dados_filtrados = array_values(array_filter($row_data, function ($row) {
 
@@ -242,7 +232,10 @@ class Arquivos
 		echo "<pre>";
 		echo "dados_processos\n";
 		echo "dados_processos com a mensagem\n";
+		echo "DADOS FILTRADOS?\n";
 		print_r($dados_filtrados);
+
+		// die();
 
 		$cacheCns = [];
 		$transacoes = [];
@@ -253,12 +246,15 @@ class Arquivos
 
 		foreach ($dados_filtrados as $r) {
 
+			$cod = $r['codcns'];
+
 			if (!empty($r['resultado'])) {
 
 				$values = $r['resultado']; //  pega o objeto inteiro
 
 				$camposAquisicao = $values->campo_aquisicao ?? null;
 				$jsonResposta    = $values->resposta_json ?? null;
+
 
 				$transacoes[] = [
 					'processo_id' => $r['processo_id'],
@@ -269,6 +265,11 @@ class Arquivos
 					'json_resposta' => $jsonResposta
 				];
 
+				// print($r['configuracao_json']);
+				// print("CONFIGURACAO DO PLUGIN???");
+
+				list($camposAquisicao, $jsonResposta) = [$values->campo_aquisicao,  $values->resposta_json];
+				# lista com os plugins
 				$plgsConfigurados = self::getPluginsConfigDB($r['configuracao_json']);
 
 				$jsonObjProscore = self::getObjectJson($jsonResposta);
@@ -276,12 +277,12 @@ class Arquivos
 				$linhaSaidaHorizontal = "";
 				$success = false;
 
-				if ($jsonObjProscore && !empty($jsonObjProscore->registro)) {
+				if ($jsonObjProscore) {
 
 					$success = true;
 
 					$registros = self::getRegistrosPlugins($jsonObjProscore, $plgsConfigurados);
-
+					
 					foreach ($registros as $plugin => $arrayValues) {
 
 						$configPlugin = self::getConfObjectByPluginDB($r['configuracao_json'], $plugin);
@@ -289,8 +290,21 @@ class Arquivos
 						if (!$configPlugin) {
 							continue;
 						}
-
+						
 						if ($configPlugin->separar) {
+
+							if (!isset($cacheCns[$cod])) {
+								$conf = $this->MontaJsonConfigEHeadersDaConsultas->execute($cod);
+								$cacheCns[$cod] = is_array($conf) ? $conf : [];
+							}
+							$confCns = $cacheCns[$cod];
+
+							$confCns = is_array($confCns) ? $confCns : [];
+							$header = isset($confCns['header_' . $plugin]) ? $confCns['header_' . $plugin] : '-';
+
+							print_R($configPlugin);
+						  
+							// if ($configPlugin) {
 
 							foreach (self::montaLinhaRegistroVertical($arrayValues, $configPlugin) as $linhaSaidaVertical) {
 
@@ -300,7 +314,8 @@ class Arquivos
 										'plugin' => $plugin,
 										'resposta' => $camposAquisicao . ";" . $linhaSaidaVertical,
 										'transacaoId' => $values->transacao_id,
-										'header' => '-'
+										// 'header' => $this->function->convertToLatin1($header),
+										'header' => $header
 									];
 								}
 							}
@@ -342,13 +357,14 @@ class Arquivos
 			}
 		}
 
+		
 		echo "<pre>";
 
 		echo "<br>transacoes<br>";
 		print_r($transacoes);
 		echo "<pre>";
 
-		echo "<br>transacoes<br>";
+		echo "<br>GrespostaPlugin<br>";
 		print_r($GrespostaPlugin);
 		echo "<pre>";
 
@@ -356,16 +372,16 @@ class Arquivos
 		print_r($GtransacaoSuceso);
 		echo "<br>sucessTruegravaTransacao<br>";
 		print_r($sucessTruegravaTransacao);
-
-
-
-
+		// die();
 		if (!empty($transacoes)) {
 			$this->GravaTransacao->insertBatch($transacoes);
 		}
 
 		if (!empty($GrespostaPlugin)) {
+			echo "estou passando aqui?";
+
 			$this->GravaRespostaPlugin->insert_all_Respost_pluglin($GrespostaPlugin);
+			// $this->GravaRespostaPlugin->update_all_Respost_pluglin($GrespostaPlugin);
 		}
 
 		if (!empty($GtransacaoSuceso)) {
@@ -424,6 +440,8 @@ class Arquivos
 
 					$plgsConfigurados = self::getPluginsConfigDB($r['configuracao_json']); // array com codigos dos plugins da configuracao 
 
+
+
 					list($camposAquisicao, $jsonResposta) = [$values->campo_aquisicao,  $values->resposta_json];
 
 					$jsonObjProscore = self::getObjectJson($jsonResposta); // object da resposta premium json
@@ -438,6 +456,9 @@ class Arquivos
 
 							// PARA CADA REGISTRO/PLUGIN do JSON PREMIUM
 							$registros = self::getRegistrosPlugins($jsonObjProscore, $plgsConfigurados);
+
+							print_r("REGISTRO RETORNOADO DO REGISTOR PLUGINS\n");
+							print_r($registros);
 
 
 							foreach ($registros as $plugin => $arrayValues) {
@@ -568,8 +589,12 @@ class Arquivos
 			die();
 		}
 
+
+
+
 		if ($confObj) {
 			foreach ($confObj as $plugin) {
+
 				if (intval($cod) == intval($plugin->plugin)) {
 					return $plugin;
 				}
@@ -583,11 +608,16 @@ class Arquivos
 
 	function getObjectJson($json)
 	{
+		// echo "<pre>";
+		// echo "JSON ENVIANDO OBJECT?";
+		// // print_R($json);
 		if ($json) {
 			if (trim($json) != "" and trim($json) != "{{{### ###}}}") {
 				// padrao json
 				if ((preg_match("/^(\{|\[)/", $json)) and (preg_match("/(\}|\])$/", $json))) {
+
 					$object = json_decode($json);
+					// var_dump($object);
 					return $object;
 				}
 			}
@@ -603,6 +633,7 @@ class Arquivos
 		try {
 			$confObj = json_decode($configuracaoJson);
 		} catch (Exception $e) {
+			print_r($e);
 			echo " *********** ERR01: ERRO AO ABRIR ARQUIVO DE CONFIGURACAO *********** ";
 			die();
 		}
@@ -619,11 +650,13 @@ class Arquivos
 	 * Retorna array com registros do json premium separado pela chave do plugin  
 	 * 
 	 * @param object $obj
-	 * @param array $arrayPluginsConf
+	 * @param array $arrayPluginsConf # LISTA COM O PLUGIN CONFIRUADO DO JSON
 	 * @return array
 	 */
 	function getRegistrosPlugins($obj, $arrayPluginsConf)
 	{
+
+
 
 		$return = array();
 
@@ -631,6 +664,7 @@ class Arquivos
 		foreach ($arrayPluginsConf as $codPlgConf) {
 			$return[$codPlgConf] = array(); // para que os registros que não estejam no retorno premium sejam incluidos com campos vazios e não quebre o layout
 		}
+
 
 		// para cada registro inclui no array de retorno
 		foreach ($obj->registro as $registro) {
@@ -640,6 +674,8 @@ class Arquivos
 			}
 			$return[$registro->numero_plugin][] = $registro;
 		}
+
+
 		return $return;
 	}
 	/**
@@ -1181,5 +1217,22 @@ class Arquivos
 		if (isset($json_enconde)) {
 			$return = $this->instance->inset_json_dados($json_enconde, 'meu_arquivo.json');
 		}
+	}
+	private static function latin1ize($data)
+	{
+		if (is_array($data)) {
+			foreach ($data as $key => $value) {
+				$data[$key] = self::latin1ize($value);
+			}
+		} elseif (is_string($data)) {
+			// Converte de UTF-8 para ISO-8859-1 (Latin1)
+			return trim(mb_convert_encoding($data, 'ISO-8859-1', 'UTF-8'));
+		}
+		return $data;
+	}
+
+	public static function convertToLatin1($data)
+	{
+		return self::latin1ize($data);
 	}
 }

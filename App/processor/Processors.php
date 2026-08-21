@@ -31,11 +31,11 @@ class processor
         echo "[" . date('H:i:s') . "] Executando ciclo total de linhas (ID: {$this->qtLimit})\n";
 
         // Aqui você coloca o que realmente precisa processar
-        require_once 'App/controllers/ListarController.php';
-        require_once 'App/controllers/ProcessController.php';
-
+  
         $listarController = new ListarController();
         $listarController->listar($this->idProcesso, $this->qtLimit);
+        // $listarController->arquivos($this->idProcesso, $this->qtLimit);
+
 
         echo "[" . date('H:i:s') . "] Executa deletar Dados Mongo\n";
         echo "-----\n";

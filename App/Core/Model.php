@@ -12,7 +12,7 @@ class Model
     {
         $this->db = Database::connect();
 
-        var_dump($this->db);
+        // var_dump($this->db);
         // exit;
     }
 }
