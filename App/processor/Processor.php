@@ -33,7 +33,7 @@ class processor
         // Aqui você coloca o que realmente precisa processar
   
         $listarController = new ListarController();
-        $listarController->listar($this->idProcesso, $this->qtLimit);
+        // $listarController->listar($this->idProcesso, $this->qtLimit);
         // $listarController->arquivos($this->idProcesso, $this->qtLimit);
 
 

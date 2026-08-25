@@ -2,7 +2,8 @@
 
 namespace App\Utilis;
 
-
+use Throwable;
+use Exception;
 
 class Config
 {
@@ -27,13 +28,51 @@ class Config
     }
 
     public static function env_json($param)
-    {
+{
+    echo "ANTES DO ENV.JSON\n";
 
-        $confContent = file_get_contents('https://site2.proscore.com.br/progestor/env.json');
+    $url = 'https://site2.proscore.com.br/progestor/env.json';
 
+    $ch = curl_init($url);
 
-        $obj = json_decode($confContent, true);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_TIMEOUT => 10,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
+    ]);
 
-        return $obj[$param];
+    echo "ANTES DO CURL\n";
+
+    $confContent = curl_exec($ch);
+
+    echo "DEPOIS DO CURL\n";
+
+    if ($confContent === false) {
+        $erro = curl_error($ch);
+        curl_close($ch);
+
+        throw new Exception("Erro CURL: {$erro}");
     }
+
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    echo "HTTP: {$httpCode}\n";
+
+    curl_close($ch);
+
+    $obj = json_decode($confContent, true);
+
+    if (!is_array($obj)) {
+        throw new Exception('JSON inválido: ' . json_last_error_msg());
+    }
+
+    if (!array_key_exists($param, $obj)) {
+        throw new Exception("Parâmetro '{$param}' não encontrado");
+    }
+
+    return $obj[$param];
+}
 }
