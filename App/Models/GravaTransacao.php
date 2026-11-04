@@ -89,56 +89,54 @@ class GravaTransacao extends Model
 		// echo "Meu ultimo id " . $this->db->lastInsertId();
 	}
 	public function insertBatch(array $registros)
-	{
-		if (empty($registros)) {
-			return false;
-		}
-		// 		if (!$this->db instanceof PDO) {
-		//     throw new RuntimeException('Conexão PDO não inicializada.');
-		// }
+{
+    if (empty($registros)) {
+        return false;
+    }
 
-		// Inicia a transação (insert em lote)
-		$this->db->beginTransaction();
+    $this->db->beginTransaction();
 
-		try {
-			$sql = "INSERT INTO progestor.log_transacao (
-				id_processo, campo_aquisicao, status, sucesso, resposta, resposta_json)
-				VALUES ";
+    try {
+        $lotesDeRegistros = array_chunk($registros, 3000);
 
-			$values = [];
-			$params = [];
+        foreach ($lotesDeRegistros as $lote) {
+            $sql = "INSERT INTO progestor.log_transacao (
+                id_processo, campo_aquisicao, status, sucesso, resposta, resposta_json)
+                VALUES ";
 
-			foreach ($registros as $i => $r) {
-				// Define valores padrão (como o execute)
-				$processoId     = $r['processo_id']     ?? null;
-				$campoAquisicao = $r['camposAquisicao'] ?? null;
-				$status         = $r['status']          ?? 0;
-				$sucesso        = $r['sucesso']         ?? true;
-				$resposta       = $r['resposta']        ?? null;
-				$respostaJson   = $r['resposta_json']   ?? null;
+            $values = [];
+            $params = [];
 
-				$values[] = "(?, ?, ?, ?, ?, ?)";
-				array_push($params, $processoId, $campoAquisicao, $status, $sucesso, $resposta, $respostaJson);
-			}
+            foreach ($lote as $r) {
+                $processoId     = $r['processo_id']     ?? null;
+                $campoAquisicao = $r['camposAquisicao'] ?? null;
+                $status         = $r['status']          ?? 0;
+                $sucesso        = $r['sucesso']         ?? true;
+                $resposta       = $r['resposta']        ?? null;
+                $respostaJson   = $r['resposta_json']   ?? null;
 
-			// Monta a query completa
-			$sql .= implode(", ", $values);
+                $values[] = "(?, ?, ?, ?, ?, ?)";
+                array_push($params, $processoId, $campoAquisicao, $status, $sucesso, $resposta, $respostaJson);
+            }
 
-			// Executa em um único INSERT
-			$stmt = $this->db->prepare($sql);
-			$stmt->execute($params);
+            // Monta e executa a query específica deste lote
+            $sql .= implode(", ", $values);
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+        }
 
-			$this->db->commit();
-			return true;
-		} catch (PDOException $e) {
-			$this->manipulador->manipuladorDeErros(
-				$e->getCode(),
-				$e->getMessage(),
-				$e->getFile(),
-				$e->getLine()
-			);
-			$this->db->rollBack();
-			throw $e;
-		}
-	}
+        $this->db->commit();
+        return true;
+    } catch (PDOException $e) {
+        $this->db->rollBack();
+        
+        $this->manipulador->manipuladorDeErros(
+            $e->getCode(),
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine()
+        );
+        throw $e;
+    }
+}
 }

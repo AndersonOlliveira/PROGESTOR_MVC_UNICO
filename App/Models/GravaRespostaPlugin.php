@@ -72,35 +72,32 @@ class GravaRespostaPlugin extends Model
 
     public function insert_all_Respost_pluglin(array $registros)
     {
-        
     if (empty($registros)) {
+        return false;
+    }
 
-            return false;
-        }
+    $this->db->beginTransaction();
 
-        // Inicia a transação (insert em lote)
-        $this->db->beginTransaction();
+    try {
+        $lotesDeRegistros = array_chunk($registros, 3000);
+        $idsGeradosLog = [];
 
+        foreach ($lotesDeRegistros as $lote) {
+            $values = [];
+            $params = [];
 
-        $values = [];
-        $params = [];
+            foreach ($lote as $r) {
+                $id_transacao   = isset($r['transacaoId']) ? (int)$r['transacaoId'] : null;
+                $plugin         = isset($r['plugin'])      ? (int)$r['plugin']      : null;
+                $resposta       = $r['resposta']       ?? null;
+                $header_arquivo = $r['header']         ?? null;
 
-        foreach ($registros as $i => $r) {
+                $values[] = "(?, ?, ?, ?)";
+                array_push($params, $id_transacao, $plugin, $resposta, $header_arquivo);
+            }
 
-
-            $id_transacao = (int)$r['transacaoId']  ?? null;
-            $plugin =  (int)$r['plugin'] ?? null;
-            $resposta   = $r['resposta']  ?? null;
-            $header_arquivo  = $r['header']   ?? null;
-
-
-            $values[] = "(?, ?, ?,?)";
-            array_push($params, $id_transacao, $plugin, $resposta, $header_arquivo);
-        }
-
-        try {
-            //busca como o ttipo integer colunas do banco estão definidas assim
-            $sql = "
+            // Monta a query específica para o lote atual
+             $sql = "
             INSERT INTO progestor.respostas_plugin (id_transacao, plugin, resposta, header_arquivo)
             SELECT v.id_transacao::integer, v.plugin::integer, v.resposta::text, v.header_arquivo::text
 
@@ -114,36 +111,44 @@ class GravaRespostaPlugin extends Model
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
+
+            // Recupera o ID gerado neste lote (se houver inserção)
             $idGerado = $stmt->fetchColumn();
-            $INFO_ID  = 'MEU ID DO RESPOSTA PUBLIGIN ' . ($idGerado ?: 'NÃO INSERIU / DUPLICATA');
-            $mensagem_erro['ID'] = $INFO_ID;
-
-            $caminho_log = "./meu_log_de_erros.log"; // O caminho do arquivo
-            error_log(print_r($mensagem_erro, true), 3, $caminho_log);
-            $this->db->commit();
-            return true;
-
-
-        } catch (PDOException $e) {
-
-            $this->manipulador->manipuladorDeErros(
-                $e->getCode(),
-                $e->getMessage(),
-                $e->getFile(),
-                $e->getLine()
-            );
-            $this->db->rollBack();
-            $INFO_ID  = 'ERRO INSERT PLUGLIN ' . $e->getMessage();
-            $mensagem_erro['ERRO-PLUGIN'] = $INFO_ID;
-
-            echo "<pre>";
-            print($mensagem_erro);
-            $caminho_log = "./meu_log_de_erros.log"; // O caminho do arquivo
-            error_log(print_r($mensagem_erro, true), 3, $caminho_log);
-
-            throw $e;
+            $idsGeradosLog[] = $idGerado ?: 'NÃO INSERIU / DUPLICATA';
         }
+
+        // Grava o log de sucesso contendo o resultado dos lotes
+        $mensagem_erro['ID'] = 'MEU ID DO RESPOSTA PUBLIGIN (LOTES): ' . implode(', ', $idsGeradosLog);
+        $caminho_log = "./meu_log_de_erros.log";
+        error_log(print_r($mensagem_erro, true), 3, $caminho_log);
+
+        // Se todos os lotes rodarem bem, commita
+        $this->db->commit();
+        return true;
+
+    } catch (PDOException $e) {
+        $this->db->rollBack();
+
+        $this->manipulador->manipuladorDeErros(
+            $e->getCode(),
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine()
+        );
+
+        $INFO_ID = 'ERRO INSERT PLUGLIN ' . $e->getMessage();
+        $mensagem_erro['ERRO-PLUGIN'] = $INFO_ID;
+
+        echo "<pre>";
+        print_r($mensagem_erro); // Corrigido de print() para print_r() para exibir a array corretamente
+        echo "</pre>";
+
+        $caminho_log = "./meu_log_de_erros.log";
+        error_log(print_r($mensagem_erro, true), 3, $caminho_log);
+
+        throw $e;
     }
+}
     
     public function update_all_Respost_pluglin(array $registros)
 {

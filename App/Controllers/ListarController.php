@@ -81,11 +81,11 @@ class ListarController extends Controller
         $return = $this->utilis_pgadmin;
         $returns = $return->list_processo($idProcesso, $qtLimit);
 
-        // $re = $this->utils->get_dados_id($returns);
+        $re = $this->utils->get_dados_id($returns);
 
         // echo "<pre>";
         // print_R('ESTOU CHEGANDO AQUI NO CONTROLLER!!!');
-        // print_R($re);
+        // print_R($returns);
 
         // die();
 

@@ -21,10 +21,10 @@ Env::load(__DIR__);
 
 $app = new AppProcessor();
 
-$id = 253;
-$quantidade = 1000;
+$id = null;
+$quantidade = 1200;
 
-$tempoEspera = 20;
+$tempoEspera = 60;
 
 register_shutdown_function(function () {
     $error = error_get_last();
